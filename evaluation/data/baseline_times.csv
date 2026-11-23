@@ -1,0 +1,11 @@
+task_type,observation,minutes,collaborator,notes
+email,1,5.5,A,devis simple
+email,2,7.0,A,réclamation avec recherche commande
+email,3,4.0,B,demande d'information
+email,4,8.5,B,réclamation + appel interne
+email,5,6.0,C,question facture
+document,1,9.0,A,facture 1 page saisie ERP
+document,2,11.5,B,facture 2 pages
+document,3,7.5,C,devis fournisseur
+document,4,10.0,A,facture scannée
+document,5,8.0,C,bon de commande

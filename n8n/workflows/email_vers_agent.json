@@ -1,0 +1,64 @@
+{
+  "name": "Email entrant -> Agent Email -> notification",
+  "nodes": [
+    {
+      "parameters": { "format": "simple", "options": { "customEmailConfig": "[\"UNSEEN\"]" } },
+      "name": "Réception IMAP",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "credentials": { "imap": { "id": "", "name": "Boîte support PME" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.API_URL }}/agents/email",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [ { "name": "X-API-Key", "value": "={{ $env.API_KEY }}" } ] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ sender: $json.from, subject: $json.subject, body: $json.textPlain || $json.text || '', message_id: $json.messageId || '' }) }}",
+        "options": { "timeout": 60000 }
+      },
+      "name": "Appel Agent Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "strict" },
+          "conditions": [
+            { "leftValue": "={{ $json.urgency }}", "rightValue": "haute", "operator": { "type": "string", "operation": "equals" } }
+          ],
+          "combinator": "and"
+        }
+      },
+      "name": "Urgent ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "agents@pme.local",
+        "toEmail": "responsable@pme.local",
+        "subject": "={{ '[URGENT] ' + $json.category + ' — tâche ' + $json.task_id }}",
+        "emailFormat": "text",
+        "text": "={{ 'Résumé : ' + $json.summary + '\\nBrouillon prêt dans la file de validation.' }}"
+      },
+      "name": "Alerte responsable",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [960, 200],
+      "credentials": { "smtp": { "id": "", "name": "SMTP PME" } }
+    }
+  ],
+  "connections": {
+    "Réception IMAP": { "main": [[ { "node": "Appel Agent Email", "type": "main", "index": 0 } ]] },
+    "Appel Agent Email": { "main": [[ { "node": "Urgent ?", "type": "main", "index": 0 } ]] },
+    "Urgent ?": { "main": [[ { "node": "Alerte responsable", "type": "main", "index": 0 } ], []] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

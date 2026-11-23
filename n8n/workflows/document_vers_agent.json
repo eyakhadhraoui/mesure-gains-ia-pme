@@ -1,0 +1,40 @@
+{
+  "name": "PDF déposé -> Agent Documents",
+  "nodes": [
+    {
+      "parameters": { "path": "/data/entrants", "events": ["add"], "options": {} },
+      "name": "Nouveau fichier",
+      "type": "n8n-nodes-base.localFileTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": { "fileSelector": "={{ $json.path }}", "options": {} },
+      "name": "Lire le PDF",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.API_URL }}/agents/document",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [ { "name": "X-API-Key", "value": "={{ $env.API_KEY }}" } ] },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": { "parameters": [ { "parameterType": "formBinaryData", "name": "file", "inputDataFieldName": "data" } ] },
+        "options": { "timeout": 120000 }
+      },
+      "name": "Appel Agent Documents",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Nouveau fichier": { "main": [[ { "node": "Lire le PDF", "type": "main", "index": 0 } ]] },
+    "Lire le PDF": { "main": [[ { "node": "Appel Agent Documents", "type": "main", "index": 0 } ]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

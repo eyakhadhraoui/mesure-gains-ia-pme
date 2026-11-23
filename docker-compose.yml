@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: agents
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agents}
+      POSTGRES_DB: agents
+    volumes: [pgdata:/var/lib/postgresql/data]
+    ports: ["5432:5432"]
+
+  api:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://agents:${POSTGRES_PASSWORD:-agents}@postgres:5432/agents
+      CHROMA_PATH: /data/chroma
+    volumes: [chroma:/data/chroma]
+    ports: ["8000:8000"]
+    depends_on: [postgres]
+
+  n8n:
+    image: n8nio/n8n:1.72.1
+    environment:
+      N8N_HOST: localhost
+      GENERIC_TIMEZONE: Europe/Paris
+      API_URL: http://api:8000
+      API_KEY: ${API_KEY:-}
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+    volumes: [n8n:/home/node/.n8n, ./n8n/workflows:/workflows:ro]
+    ports: ["5678:5678"]
+    depends_on: [api]
+
+volumes:
+  pgdata:
+  chroma:
+  n8n:
